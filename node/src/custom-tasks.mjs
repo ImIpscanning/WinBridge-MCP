@@ -30,6 +30,11 @@ export function readCustomTasks(workspace, env=process.env) {
     })) throw new WorkspaceError("Custom task configuration must be outside writable project roots.");
   }
   if(!fs.existsSync(configPath)) return {};
+  const realFile=fs.realpathSync(configPath);
+  if (workspace.roots.some(root=>{
+    const rel=path.relative(root,realFile);
+    return rel==="" || (rel!==".." && !rel.startsWith(".."+path.sep) && !path.isAbsolute(rel));
+  })) throw new WorkspaceError("Custom task config cannot be a symlink into a workspace.");
   const file=fs.statSync(configPath);
   if(!file.isFile() || file.size>40_000) throw new WorkspaceError("Invalid custom tasks configuration.");
   let parsed;
@@ -37,7 +42,7 @@ export function readCustomTasks(workspace, env=process.env) {
   catch{throw new WorkspaceError("Custom tasks config must be valid JSON.");}
   if(!parsed || parsed.version!==1 || !parsed.tasks || Array.isArray(parsed.tasks) || typeof parsed.tasks!=="object")
     throw new WorkspaceError("Custom task config must contain version=1 and a tasks object.");
-  const tasks={};
+  const tasks=Object.create(null);
   for(const [name,entry] of Object.entries(parsed.tasks)){
     if(!NAME_PATTERN.test(name)) throw new WorkspaceError("Invalid custom task name.");
     if(!entry || typeof entry!=="object" || Array.isArray(entry)) throw new WorkspaceError("Invalid task: "+name);
