@@ -5,6 +5,7 @@ import * as z from "zod/v4";
 import { Workspace } from "./workspace.mjs";
 import { TerminalManager } from "./terminal.mjs";
 import { listWindows, captureDesktop, openExplorer } from "./windows.mjs";
+import { desktopInput, desktopInputStatus } from "./windows-input.mjs";
 
 const workspace=Workspace.fromEnv();
 const terminal=new TerminalManager(workspace);
@@ -18,7 +19,7 @@ const write={readOnlyHint:false,destructiveHint:false,openWorldHint:false};
 const destructive={readOnlyHint:false,destructiveHint:true,openWorldHint:false};
 
 function createServer(){
-  const server=new McpServer({name:"winbridge-node",version:"0.1.0"});
+  const server=new McpServer({name:"winbridge-node",version:"0.2.0"});
   function register(name,description,inputSchema,annotations,handler){
     server.registerTool(name,{description,inputSchema,annotations},async(args)=>{
       try{return textResult(await handler(args));}
@@ -48,6 +49,20 @@ function createServer(){
     catch(e){return {isError:true,content:[{type:"text",text:String(e?.message??e)}]};}
   });
   register("desktop_open_workspace","With local approval, open an authorized directory in Windows Explorer.",z.object({path:p.default(".")}),write,({path})=>openExplorer(workspace,path));
+  register("desktop_input_status","Show desktop input permissions, editor allowlist and available hotkeys.",noArgs,readOnly,()=>desktopInputStatus());
+  register("desktop_active_window","Show current approved foreground application and its screen-coordinate bounds.",noArgs,readOnly,()=>desktopInput("active_window"));
+  register("desktop_move_cursor","Move the mouse within the approved foreground application after Windows confirmation.",
+    z.object({x:z.number().int(),y:z.number().int()}),write,({x,y})=>desktopInput("move",{x,y}));
+  register("desktop_click","Perform one left/right click inside an approved foreground window, with Windows confirmation.",
+    z.object({x:z.number().int(),y:z.number().int(),button:z.enum(["left","right"]).default("left")}),
+    destructive,({x,y,button})=>desktopInput("click",{x,y,button}));
+  register("desktop_type_text","Type up to 500 Unicode characters into an approved editor after Windows confirmation.",
+    z.object({text:z.string().min(1).max(500)}),write,({text})=>desktopInput("type",{text}));
+  register("desktop_hotkey","Send one approved Ctrl+editing shortcut into the foreground editor after Windows confirmation.",
+    z.object({keys:z.enum(["ctrl+a","ctrl+c","ctrl+f","ctrl+s","ctrl+v","ctrl+y","ctrl+z"])}),
+    destructive,({keys})=>desktopInput("hotkey",{keys}));
+  register("desktop_scroll","Scroll within the approved foreground window after Windows confirmation.",
+    z.object({amount:z.number().int().min(-10).max(10)}),write,({amount})=>desktopInput("scroll",{amount}));
   return server;
 }
 
