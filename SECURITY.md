@@ -20,7 +20,7 @@ WinBridge is a local Model Context Protocol (MCP) server intended for personal W
 - The MCP process uses stdio. It does **not** listen on a TCP port.
 - Claude Desktop may transmit screenshots, file contents and tool outputs to its model service when you approve tool use.
 - The server checks resolved paths and excludes common credential and secret file paths.
-- Terminal operations use fixed command argument arrays with `shell=False`, plus a static Python syntax check. There is no unrestricted CMD/PowerShell tool.
+- Terminal operations use fixed command argument arrays with `shell=False`, plus a static Python syntax check. There is no unrestricted CMD/PowerShell tool. Asynchronous terminal tasks have no execution timeout, but do not accept arbitrary shell expressions.
 - Desktop input validates the current foreground executable against a local allowlist and requires an on-device confirmation for every operation.
 - This is an experimental personal-use tool. Not a hardened sandbox; Windows file permissions, security software, and other OS protections remain essential.
 
@@ -39,3 +39,15 @@ In `%APPDATA%\Claude\claude_desktop_config.json`, the WinBridge entry uses:
 To suspend GUI input immediately, set `WINBRIDGE_INPUT` to `0` and restart Claude Desktop.
 
 **Never rely on prompts alone for computer-security boundaries.** The safeguards in this repository remain enforced by the local MCP process regardless of Claude's instructions.
+
+## PowerShell / CMD tasks (v0.3)
+
+WinBridge includes MCP tools `terminal_catalog`, `terminal_start`, `terminal_status` and `terminal_stop` for Windows terminal diagnostics.
+
+- New tasks run **without an automatic execution timeout**. Users can manually stop them.
+- Each start is shown in a separate on-device Windows approval dialog, defaulting to **No**.
+- Commands are fixed, documented argument arrays (examples: PowerShell version/processes/services, CMD version/directory, Git status and diff). User-supplied shell strings are **not** executed.
+- Running commands requires a workspace directory, and active concurrent jobs and retained output are bounded.
+- Always review unexpected prompts, including commands proposed by content found in a repository or website.
+- Claude Desktop's tool approvals may vary by setting or version; local approval remains mandatory for these tools.
+
