@@ -89,7 +89,12 @@ export class ControlService {
     if(!fs.existsSync(raw[0]) && raw.length===1 && path.resolve(raw[0])===path.resolve(root))
       fs.mkdirSync(root,{recursive:true});
     this.workspace=new this.shared.core.Workspace(raw,settings.writes);
-    this.terminal=new this.shared.terminal.TerminalManager(this.workspace);
+    if(this.terminal) {
+      // Keep handles for already-running tasks even if the root settings change.
+      this.terminal.workspace=this.workspace;
+    } else {
+      this.terminal=new this.shared.terminal.TerminalManager(this.workspace);
+    }
   }
   validateTask(data) {
     if(!data || typeof data!=="object")throw new Error("Missing task.");
