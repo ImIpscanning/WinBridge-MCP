@@ -6,7 +6,7 @@ import {fileURLToPath} from "node:url";
 import {ControlService,loadShared} from "./services.mjs";
 
 const here=path.dirname(fileURLToPath(import.meta.url));
-let window=null,service=null;
+let window=null,service=null,sharedModules=null;
 
 function register(name,fn){
   ipcMain.handle("winbridge:"+name,async(_event,payload)=>{
@@ -35,6 +35,8 @@ function wireIpc(){
   register("list-trash",()=>service.listTrash());
   register("restore",({id})=>ensureUserAction(()=>service.restore(id)));
   register("activity",()=>service.activity());
+  register("desktop-windows",()=>ensureUserAction(()=>sharedModules.windows.listWindows()));
+  register("desktop-screenshot",()=>ensureUserAction(()=>sharedModules.windows.captureDesktop()));
   register("save-permissions",settings=>ensureUserAction(()=>service.savePermissions(settings)));
   register("pause",({paused})=>ensureUserAction(()=>service.pause(paused)));
   register("choose-directory",async()=>ensureUserAction(async()=>{
@@ -115,6 +117,7 @@ app.whenReady().then(async()=>{
     path.join(process.resourcesPath,"node","src"):
     path.resolve(here,"../../node/src");
   const shared=await loadShared(sharedPath);
+  sharedModules=shared;
   service=new ControlService(shared);
   wireIpc();
   createWindow();
