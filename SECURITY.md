@@ -61,7 +61,20 @@ The Node edition provides `desktop_active_window`, `desktop_move_cursor`, `deskt
 - Every input action opens an explicit Windows Yes/No dialog that defaults to **No**.
 - After acceptance, WinBridge rechecks that the active window is still the originally approved application; clicks and mouse movement must stay inside that window's screen rectangle. Scrolling requires the cursor inside it.
 - In-app controls, including integrated terminals, can still perform consequential actions if approved. Do not assume an editor allowlist is a sandbox. Close sensitive apps or terminal panels before granting input, and reject unexpected actions.
-- Tool calls cannot use arbitrary PowerShell strings directly; the input helper invokes only predefined Win32 keyboard/mouse operations. The terminal module remains limited to fixed diagnostics.
+- Tool calls cannot use arbitrary PowerShell strings directly; the input helper invokes only predefined Win32 keyboard/mouse operations. The terminal module also supports user-owned custom task profiles defined outside model-writable folders; arbitrary command strings are still not accepted from the model.
 - Testing in headless GitHub Actions checks syntax, native interop compilation, input validation, and MCP tool registration; test actual input only on a Windows desktop you control.
 
 Do not grant broad application access if you do not trust the open content in that application. Untrusted documents and websites can contain instructions that try to manipulate a connected agent.
+
+## User-configured commands in Node.js (v0.3)
+
+The Node edition can run locally prepared PowerShell, CMD and development tasks using `terminal_start_custom`.
+
+- Configuration is stored outside WinBridge's authorized workspace roots, typically `%APPDATA%\WinBridge-MCP\custom-tasks.json`. The server rejects configurations that resolve into project directories available for editing by Claude.
+- Only the human-configured task **name** can be supplied by the MCP client. The executable path, arguments and working directory are read from that separate configuration file.
+- `terminal_preview_custom` shows the exact executable and argument array for a selected task. The start operation displays the details in a local confirmation dialog, default **No**.
+- A task may run indefinitely until it finishes or is manually stopped. The session does not spawn an HTTP listener.
+- **A custom task can still be dangerous.** Treat the profile as trusted local code; do not reference scripts or configuration files that an agent or untrusted process can rewrite. Do not run as Administrator.
+- Execution from within a project can invoke indirect scripts or plugins. Review those dependencies before granting approval. An approval dialog is not a sandbox.
+
+Claude cannot supply an arbitrary PowerShell/CMD program string via this API. For one-off commands, review and run them manually in your own Windows terminal.
