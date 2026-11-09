@@ -25,8 +25,8 @@ export class TerminalManager {
     return {tasks:Object.keys(TASKS),execution_timeout:null,manual_stop:true,local_approval:true,arbitrary_shell:false};
   }
   async start(name,cwd=".") {
-    windowsOnly();
     if(!Object.hasOwn(TASKS,name))throw new WorkspaceError("Unsupported terminal task: use terminal_catalog.");
+    windowsOnly();
     const dir=this.workspace.resolve(cwd,true);
     if(!fs.statSync(dir).isDirectory())throw new WorkspaceError("Working directory must exist.");
     const active=[...this.jobs.values()].filter(t=>t.status==="running").length;
