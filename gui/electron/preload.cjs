@@ -29,6 +29,12 @@ const bridge={
   checkUpdates:()=>ipcRenderer.invoke("winbridge:check-updates"),
   openReleases:()=>ipcRenderer.invoke("winbridge:open-releases"),
   openFolder:()=>ipcRenderer.invoke("winbridge:open-folder"),
+  onFocusRequests:callback=>{
+    if(typeof callback!=="function")return ()=>{};
+    const listener=()=>callback();
+    ipcRenderer.on("winbridge:focus-requests",listener);
+    return ()=>ipcRenderer.removeListener("winbridge:focus-requests",listener);
+  },
   getLaunchAtLogin:()=>ipcRenderer.invoke("winbridge:login-status"),
   setLaunchAtLogin:value=>ipcRenderer.invoke("winbridge:login-set",{value})
 };
