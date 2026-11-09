@@ -11,11 +11,11 @@ The GUI is **not an alternative MCP runtime**. Claude Desktop starts its own sep
 | Dashboard | Show installation/configuration status, pending command proposals, task count and latest audit events |
 | Approvals | Review a proposal sent by Claude, edit its executable/arguments, save it as a user-owned task profile, or dismiss it |
 | Terminal Manager | Add/remove trusted custom profiles; inspect and run saved tasks; check output and stop jobs launched in the GUI |
-| File Manager | Browse and read text files inside authorized roots; restore files from WinBridge's recoverable trash |
+| File Manager | Browse/read authorized text files, save private snapshots, browse backup history, restore previous versions with confirmation, restore recoverable trash |
 | Desktop Manager | View window titles, request a manually approved screenshot, review editor permissions |
 | Permission Center | Edit allowed project roots, workspace writes, desktop observation and app allowlist; pause new MCP actions |
 | History | Read recent WinBridge audit log entries |
-| Settings | Dark/light themes, config export/import, start GUI at login (packaged Windows), and GitHub release link |
+| Settings | Dark/light themes, config export/import, start GUI at login (packaged Windows), check signed-off GUI release tags on GitHub, and open Releases |
 
 ### Command approval flow
 
@@ -26,6 +26,15 @@ The GUI is **not an alternative MCP runtime**. Claude Desktop starts its own sep
 5. Claude can then request `terminal_preview_custom` and `terminal_start_custom`. **Each execution still requires Windows approval**, defaults to No, has no fixed timeout, and can be manually canceled.
 
 A proposal cannot directly approve itself or execute. The server does not offer arbitrary agent-supplied shell execution. Windows OS permissions remain in force. Use only reviewed scripts and avoid running the application as Administrator.
+
+### File backups
+
+Select a text file in **File Manager** and choose **Respaldar**. Backups are copied to `%APPDATA%\WinBridge-MCP\backups`, outside the model-writable project folders. Click **Respaldos** to list available versions.
+
+- Restore without overwrite only if the original file no longer exists.
+- **Reemplazar** asks for confirmation and first backs up the current version.
+- Backup operations are restricted to authorized workspace files (maximum 20 MB per snapshot), and restoration is permitted only while workspace writes are enabled.
+- File snapshots are local and don't upload anything automatically.
 
 ### Emergency pause
 
@@ -76,7 +85,7 @@ Output is in `gui/dist-installer`. GitHub Actions can build it on a Windows runn
 - Changing the MCP tool permissions requires restarting Claude Desktop. An emergency pause affects subsequent Node MCP actions without restarting.
 - Screenshot/desktop input may expose sensitive information. Do not approve unexpected prompts.
 - Backups and audit logs are local; the audit log is best-effort, not tamper-evident.
-- Electron releases are not auto-updated yet. The Releases button opens the trusted GitHub repository; automatic signed updates require a signed release workflow.
+- Electron updates are **checked manually** against GitHub's releases API, considering only stable Control Center release tags. The GUI never downloads or executes an update automatically. Signed automatic updates require a separate signed release workflow.
 
 ## Roadmap
 
