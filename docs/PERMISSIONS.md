@@ -32,3 +32,15 @@ This project does not provide an unsupervised arbitrary command executor, admini
 - **Desktop action refused?** Confirm `WINBRIDGE_DESKTOP` and `WINBRIDGE_INPUT` are both `1`, and the active app's executable is allowlisted.
 - **Screenshots fail?** Check the desktop session is interactive, then re-run the installer.
 - **File access denied?** Add the correct project folder to `WINBRIDGE_ROOTS`; do not bypass OS security.
+
+## PowerShell / CMD tasks (v0.3)
+
+WinBridge includes MCP tools `terminal_catalog`, `terminal_start`, `terminal_status` and `terminal_stop` for Windows terminal diagnostics.
+
+- New tasks run **without an automatic execution timeout**. Users can manually stop them.
+- Each start is shown in a separate on-device Windows approval dialog, defaulting to **No**.
+- Commands are fixed, documented argument arrays (examples: PowerShell version/processes/services, CMD version/directory, Git status and diff). User-supplied shell strings are **not** executed.
+- Running commands requires a workspace directory, and active concurrent jobs and retained output are bounded.
+- Always review unexpected prompts, including commands proposed by content found in a repository or website.
+- Claude Desktop's tool approvals may vary by setting or version; local approval remains mandatory for these tools.
+
