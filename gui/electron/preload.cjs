@@ -26,6 +26,7 @@ const bridge={
   exportConfig:()=>ipcRenderer.invoke("winbridge:export"),
   importConfig:()=>ipcRenderer.invoke("winbridge:import"),
   chooseDirectory:()=>ipcRenderer.invoke("winbridge:choose-directory"),
+  checkUpdates:()=>ipcRenderer.invoke("winbridge:check-updates"),
   openReleases:()=>ipcRenderer.invoke("winbridge:open-releases"),
   openFolder:()=>ipcRenderer.invoke("winbridge:open-folder"),
   getLaunchAtLogin:()=>ipcRenderer.invoke("winbridge:login-status"),
