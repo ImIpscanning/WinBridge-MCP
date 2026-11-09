@@ -22,6 +22,8 @@ try {
     if ($LASTEXITCODE -ne 0) { throw 'npm install failed.' }
     & $nodeCommand.Source --check $entryFile
     if ($LASTEXITCODE -ne 0) { throw 'Node server syntax check failed.' }
+    & $nodeCommand.Source --check (Join-Path $project 'src\windows-input.mjs')
+    if ($LASTEXITCODE -ne 0) { throw 'Desktop input module syntax check failed.' }
 } finally { Pop-Location }
 
 New-Item -ItemType Directory -Force -Path $workspace | Out-Null
@@ -42,6 +44,8 @@ $entry = [pscustomobject]@{
         WINBRIDGE_ROOTS = $workspace
         WINBRIDGE_WRITE = '1'
         WINBRIDGE_DESKTOP = '1'
+        WINBRIDGE_INPUT = '1'
+        WINBRIDGE_INPUT_APPS = 'notepad.exe;code.exe'
     }
 }
 $config.mcpServers | Add-Member -NotePropertyName 'winbridge-node' -NotePropertyValue $entry -Force
