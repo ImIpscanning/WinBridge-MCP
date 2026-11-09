@@ -38,6 +38,16 @@ export class TerminalManager {
     if(!Object.hasOwn(TASKS,name))throw new WorkspaceError("Unsupported terminal task: use terminal_catalog.");
     return this._start(name,TASKS[name],cwd);
   }
+  previewCustom(name) {
+    const custom=readCustomTasks(this.workspace);
+    if(!Object.hasOwn(custom,name))throw new WorkspaceError("Unknown custom task. Configure it locally first.");
+    const task=custom[name];
+    return {
+      task:name, description:task.description, executable:task.argv[0],
+      arguments:task.argv.slice(1), working_directory:task.cwd,
+      execution_timeout:null, local_approval_required:true, launched:false
+    };
+  }
   async startCustom(name) {
     const custom=readCustomTasks(this.workspace);
     if(!Object.hasOwn(custom,name))throw new WorkspaceError("Unknown custom task. Configure it locally first.");
