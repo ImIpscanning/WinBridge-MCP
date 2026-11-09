@@ -136,6 +136,71 @@ def desktop_open_workspace(path: str = '.') -> str:
     return f'Opened File Explorer at {directory}'
 
 
+
+# Input permissions are opt-in and revalidated in the desktop module.
+from winbridge_desktop_control import (
+    input_status as _input_status,
+    click as _desktop_click,
+    type_text as _desktop_type_text,
+    hotkey as _desktop_hotkey,
+    scroll as _desktop_scroll,
+)
+
+
+@mcp.tool(annotations=READ)
+def desktop_input_status() -> dict:
+    """Show application allowlist and desktop input permission status."""
+    return _input_status()
+
+
+@mcp.tool(annotations=DELETE)
+def desktop_click(x: int, y: int, button: str = 'left') -> dict:
+    """Click once inside an allowed foreground app with local user confirmation."""
+    return _desktop_click(x, y, button)
+
+
+@mcp.tool(annotations=WRITE)
+def desktop_type_text(text: str) -> dict:
+    """Type short ASCII text in an allowed app with local user confirmation."""
+    return _desktop_type_text(text)
+
+
+@mcp.tool(annotations=DELETE)
+def desktop_hotkey(keys: str) -> dict:
+    """Press an allowed editor shortcut with local user confirmation."""
+    return _desktop_hotkey(keys)
+
+
+@mcp.tool(annotations=DELETE)
+def desktop_scroll(amount: int) -> dict:
+    """Scroll an allowed app with local user confirmation."""
+    return _desktop_scroll(amount)
+
+
+@mcp.tool(annotations=WRITE)
+def create_directory(path: str) -> str:
+    """Create a folder inside an authorized workspace."""
+    return workspace.create_directory(path)
+
+
+@mcp.tool(annotations=READ)
+def preview_text_edit(path: str, old_text: str, new_text: str) -> dict:
+    """Preview a bounded unified diff before editing a workspace text file."""
+    return workspace.preview_text_edit(path, old_text, new_text)
+
+
+@mcp.tool(annotations=READ)
+def trash_list(workspace_index: int = 0) -> list[dict]:
+    """List recent recoverable file deletions in a selected workspace."""
+    return workspace.trash_list(workspace_index)
+
+
+@mcp.tool(annotations=READ)
+def python_syntax_check(path: str = '.') -> dict:
+    """Statically parse .py files in a project, without executing Python code."""
+    return workspace.python_syntax_check(path)
+
+
 if __name__ == '__main__':
     # STDIO transport: Claude Desktop launches this process locally; no network listener.
     mcp.run()
