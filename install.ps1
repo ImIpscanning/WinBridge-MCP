@@ -40,7 +40,9 @@ $entry = [pscustomobject]@{
     }
 }
 $config.mcpServers | Add-Member -NotePropertyName 'winbridge' -NotePropertyValue $entry -Force
-$config | ConvertTo-Json -Depth 25 | Set-Content -Path $configPath -Encoding UTF8
+$json = $config | ConvertTo-Json -Depth 25
+# Windows PowerShell 5.1 adds a UTF-8 BOM with Set-Content; Claude expects plain JSON.
+[System.IO.File]::WriteAllText($configPath, $json, (New-Object System.Text.UTF8Encoding($false)))
 Write-Host "Configured Claude Desktop: $configPath" -ForegroundColor Green
 Write-Host "Workspace: $workspace"
 Write-Host 'Restart Claude Desktop to load WinBridge MCP.' -ForegroundColor Yellow
