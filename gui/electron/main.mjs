@@ -108,10 +108,14 @@ function createWindow(){
       webSecurity:true,devTools:!app.isPackaged
     }
   });
+  // The renderer needs no camera, microphone, geolocation, notifications or arbitrary navigation.
+  window.webContents.session.setPermissionRequestHandler((_contents,_permission,callback)=>callback(false));
   window.webContents.setWindowOpenHandler(()=>({action:"deny"}));
   window.webContents.on("will-navigate",(event,url)=>{
-    if(!url.startsWith("http://127.0.0.1:5173/")&&!url.startsWith("file://"))
-      event.preventDefault();
+    const allowed=app.isPackaged?
+      "file://"+path.join(here,"../dist/index.html").replace(/\\/g,"/"):
+      "http://127.0.0.1:5173/";
+    if(app.isPackaged?url!==allowed:!url.startsWith(allowed))event.preventDefault();
   });
   window.once("ready-to-show",()=>window.show());
   if(!app.isPackaged && process.env.WINBRIDGE_GUI_DEV==="1"){
