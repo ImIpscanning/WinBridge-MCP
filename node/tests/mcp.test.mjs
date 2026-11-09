@@ -60,6 +60,8 @@ test("Node MCP server initializes and lists workspace tools over stdio",async()=
     const names=listed.result.tools.map(tool=>tool.name);
     assert.ok(names.includes("workspace_info"));
     assert.ok(names.includes("terminal_catalog"));
+    assert.ok(names.includes("terminal_start_custom"),"Missing local profile launch tool");
+    assert.ok(names.includes("terminal_preview_custom"),"Missing local profile preview tool");
     assert.ok(names.includes("desktop_screenshot"));
     assert.ok(names.includes("restore_file"));
     for (const name of [
