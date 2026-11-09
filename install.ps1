@@ -37,6 +37,8 @@ $entry = [pscustomobject]@{
         WINBRIDGE_ROOTS = $workspace
         WINBRIDGE_WRITE = '1'
         WINBRIDGE_DESKTOP = '1'
+        WINBRIDGE_INPUT = '1'
+        WINBRIDGE_INPUT_APPS = 'notepad.exe;code.exe'
     }
 }
 $config.mcpServers | Add-Member -NotePropertyName 'winbridge' -NotePropertyValue $entry -Force
