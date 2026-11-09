@@ -5,7 +5,7 @@ import {
   Code2, Copy, Download, ExternalLink, Eye, FileCode2, FileText,
   Folder, FolderOpen, HardDrive, Inbox, Info, Keyboard, LayoutDashboard,
   ListChecks, LockKeyhole, Menu, Monitor, Moon, MousePointer2, PauseCircle,
-  Play, Plus, RefreshCw, RotateCcw, Save, Search, Settings2, Shield,
+  Play, Plus, Pencil, RefreshCw, RotateCcw, Save, Search, Settings2, Shield,
   ShieldAlert, ShieldCheck, SlidersHorizontal, Sun, Terminal,
   Trash2, Upload, X, XCircle
 } from "lucide-react";
@@ -344,6 +344,9 @@ export default function App(){
            <div className="grow"><strong>{task.name}</strong><small>{task.description}</small>
             <code>{task.program} {(task.args||[]).join(" ")}</code></div>
            <div className="task-actions">
+            <IconButton icon={Pencil} title="Editar tarea" onClick={()=>{
+              setProposalId(null);setForm(taskToForm(task));setEditing(true);
+            }}/>
             <IconButton icon={Eye} title="Ver argumentos" onClick={async()=>{try{setTaskPreview(await api("previewTask",task.name));}catch(e){show(e.message,"error");}}}/>
             <IconButton icon={Trash2} title="Eliminar tarea" onClick={()=>{
               if(window.confirm("¿Eliminar la tarea "+task.name+" del catálogo?"))
