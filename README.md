@@ -7,7 +7,9 @@
 - **[Node.js installation guide](node/README.md)** — Node 20+ with a one-command Windows installer: `./node/install-node.ps1`
 - Official `@modelcontextprotocol/server` SDK v2; registers **`winbridge-node`** in Claude Desktop
 - Provides scoped file operations, PowerShell/CMD diagnostic tasks with **no automatic time limit**, and approved Windows desktop observation
+- **Node.js v0.2:** mouse movement, clicks, Unicode typing, editor shortcuts and scrolling, with on-device approval for each action
 - The original Python edition remains supported and unchanged
+- The Node installer configures the same editor permissions as Python. See the [Node-specific permissions guide](node/README.md#mouse-and-keyboard-permission-setup).
 
 
 A local, open-source **Windows 10/11 bridge for Claude Desktop**, built with the [official Python MCP SDK v2](https://py.sdk.modelcontextprotocol.io/). It combines project file editing, bounded terminal diagnostics, desktop observation and locally approved interaction with selected Windows applications.
