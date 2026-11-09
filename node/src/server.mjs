@@ -40,6 +40,8 @@ function createServer(){
   register("restore_file","Restore a file using its restore ID.",z.object({restore_id:z.string().regex(/^[a-f0-9]{32}$/),workspace_index:index.default(0)}),write,({restore_id,workspace_index})=>workspace.restore(restore_id,workspace_index));
   register("terminal_catalog","List approved PowerShell, CMD and developer diagnostic tasks.",noArgs,readOnly,()=>terminal.catalog());
   register("terminal_start","Request on-device permission and start a terminal task without timeout.",z.object({name:z.string().min(1).max(64),cwd:p.default(".")}),write,({name,cwd})=>terminal.start(name,cwd));
+  register("terminal_preview_custom","Preview a locally configured script's exact executable, arguments and working directory.",
+    z.object({name:z.string().regex(/^[a-z][a-z0-9_-]{0,63}$/i)}),readOnly,({name})=>terminal.previewCustom(name));
   register("terminal_start_custom","Start a Windows-user-configured script/task profile after local approval; no automatic timeout.",
     z.object({name:z.string().regex(/^[a-z][a-z0-9_-]{0,63}$/i)}),write,({name})=>terminal.startCustom(name));
   register("terminal_status","Check an asynchronous terminal job's output and exit status.",z.object({task_id:z.string().uuid()}),readOnly,({task_id})=>terminal.status(task_id));
