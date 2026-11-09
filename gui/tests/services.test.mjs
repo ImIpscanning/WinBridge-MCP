@@ -124,3 +124,22 @@ test("import validates task payloads and does not change permissions",()=>fixtur
   assert.deepEqual(JSON.parse(fs.readFileSync(config,"utf8")),settingsBefore);
   assert.throws(()=>service.importBundle({schema_version:99}),/Unsupported/);
 }));
+
+test("file backups can restore a version while preserving the current one",()=>fixture(({service,workspace})=>{
+  const file=path.join(workspace,"readme.txt");
+  fs.writeFileSync(file,"original");
+  const backup=service.backupFile(file);
+  assert.equal(service.listBackups().length,1);
+  fs.writeFileSync(file,"modified");
+  assert.throws(()=>service.restoreBackup(backup.id,false),/exists/);
+  const result=service.restoreBackup(backup.id,true);
+  assert.equal(result.previous_version_backed_up,true);
+  assert.equal(fs.readFileSync(file,"utf8"),"original");
+  assert.equal(service.listBackups().length,2);
+}));
+test("file backup operations reject paths outside authorized roots",()=>fixture(({service,root})=>{
+  const file=path.join(root,"private.txt");
+  fs.writeFileSync(file,"outside");
+  assert.throws(()=>service.backupFile(file),/outside/);
+  assert.throws(()=>service.restoreBackup("../../anything",true),/Invalid backup ID/);
+}));
