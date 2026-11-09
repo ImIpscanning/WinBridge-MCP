@@ -5,6 +5,7 @@ import os from "node:os";
 import path from "node:path";
 import { WorkspaceError } from "./workspace.mjs";
 import { localApprove, windowsOnly } from "./windows.mjs";
+import { readCustomTasks } from "./custom-tasks.mjs";
 
 const OUTPUT_LIMIT=20_000, ACTIVE_LIMIT=4;
 const TASKS=Object.freeze({
@@ -22,24 +23,48 @@ const TASKS=Object.freeze({
 export class TerminalManager {
   constructor(workspace) {this.workspace=workspace;this.jobs=new Map();}
   catalog() {
-    return {tasks:Object.keys(TASKS),execution_timeout:null,manual_stop:true,local_approval:true,arbitrary_shell:false};
+    const custom=readCustomTasks(this.workspace);
+    return {
+      tasks:Object.keys(TASKS),
+      custom_tasks:Object.values(custom).map(task=>({name:task.name,description:task.description})),
+      execution_timeout:null,
+      manual_stop:true,
+      local_approval:true,
+      arbitrary_shell:false,
+      note:"Custom commands must be configured locally outside the MCP workspace."
+    };
   }
   async start(name,cwd=".") {
     if(!Object.hasOwn(TASKS,name))throw new WorkspaceError("Unsupported terminal task: use terminal_catalog.");
+    return this._start(name,TASKS[name],cwd);
+  }
+  async startCustom(name) {
+    const custom=readCustomTasks(this.workspace);
+    if(!Object.hasOwn(custom,name))throw new WorkspaceError("Unknown custom task. Configure it locally first.");
+    const task=custom[name];
+    return this._start("custom:"+name,task.argv,task.cwd);
+  }
+  async _start(name,args,cwd) {
     windowsOnly();
     const dir=this.workspace.resolve(cwd,true);
     if(!fs.statSync(dir).isDirectory())throw new WorkspaceError("Working directory must exist.");
     const active=[...this.jobs.values()].filter(t=>t.status==="running").length;
     if(active>=ACTIVE_LIMIT)throw new WorkspaceError("Four running tasks is the maximum.");
-    const args=TASKS[name];
-    localApprove("Start the following terminal diagnostic?\n\nTask: "+name+"\nExecutable: "+args[0]+"\nWorkspace: "+dir+"\n\nNo execution timeout; use terminal_stop to cancel.");
+    const command=args.join(" ");
+    const message="Start the following task?\n\nTask: "+name+
+      "\nCommand: "+command+"\nWorkspace: "+dir+
+      "\n\nNo execution timeout; use terminal_stop to cancel.";
+    // The local dialog helper clips its text; reject any task that would be
+    // truncated so the user always sees every executable argument.
+    if(message.length>850)throw new WorkspaceError("Command display exceeds local approval dialog limit.");
+    localApprove(message);
     const job={id:randomUUID(),name,cwd:dir,started_at:new Date().toISOString(),status:"running",exit_code:null,output:"",truncated:false};
     this.jobs.set(job.id,job);
     const child=spawn(args[0],args.slice(1),{cwd:dir,windowsHide:true,shell:false,stdio:["ignore","pipe","pipe"]});
     job.child=child;
     function collect(chunk) {
-      const s=chunk.toString("utf8");
-      job.output+=s;
+      const text=chunk.toString("utf8");
+      job.output+=text;
       if(job.output.length>OUTPUT_LIMIT){job.output=job.output.slice(-OUTPUT_LIMIT);job.truncated=true;}
     }
     child.stdout.on("data",collect);
