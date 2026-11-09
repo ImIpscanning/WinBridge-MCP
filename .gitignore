@@ -1,0 +1,8 @@
+.venv/
+__pycache__/
+.pytest_cache/
+*.pyc
+.winbridge_trash/
+.winbridge_audit.jsonl
+.env
+.env.*
