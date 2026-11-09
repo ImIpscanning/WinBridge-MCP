@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import ctypes
+from ctypes import wintypes
 import os
 import sys
 from pathlib import Path
@@ -89,7 +90,15 @@ def desktop_list_windows() -> list[str]:
         raise WorkspaceError('This tool requires Windows.')
     titles: list[str] = []
     user32 = ctypes.windll.user32
-    enum_type = ctypes.WINFUNCTYPE(ctypes.c_bool, ctypes.c_void_p, ctypes.c_ssize_t)
+    user32.IsWindowVisible.argtypes = [wintypes.HWND]
+    user32.IsWindowVisible.restype = wintypes.BOOL
+    user32.GetWindowTextLengthW.argtypes = [wintypes.HWND]
+    user32.GetWindowTextLengthW.restype = ctypes.c_int
+    user32.GetWindowTextW.argtypes = [wintypes.HWND, wintypes.LPWSTR, ctypes.c_int]
+    user32.GetWindowTextW.restype = ctypes.c_int
+    enum_type = ctypes.WINFUNCTYPE(ctypes.c_int, wintypes.HWND, wintypes.LPARAM)
+    user32.EnumWindows.argtypes = [enum_type, wintypes.LPARAM]
+    user32.EnumWindows.restype = wintypes.BOOL
 
     @enum_type
     def callback(hwnd: int, _param: int) -> bool:
