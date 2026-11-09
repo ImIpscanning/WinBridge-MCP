@@ -257,3 +257,98 @@ class Workspace:
             raise WorkspaceError(str(exc)) from exc
         output = (process.stdout + process.stderr)[:MAX_RESULT_CHARS]
         return {'task': task, 'return_code': process.returncode, 'output': output}
+
+
+    def create_directory(self, path: str) -> str:
+        """Create a directory below an existing authorized workspace root."""
+        self._require_write()
+        target = self.resolve(path)
+        if target.exists() and not target.is_dir():
+            raise WorkspaceError("A non-directory already exists at this path.")
+        target.mkdir(parents=True, exist_ok=True)
+        self._audit("create_directory", target)
+        return f"Directory ready: {target}"
+
+    def preview_text_edit(self, path: str, old_text: str, new_text: str) -> dict:
+        """Compute an exact-match edit preview without changing anything."""
+        import difflib
+        target = self.resolve(path)
+        if not target.is_file() or target.stat().st_size > MAX_TEXT_BYTES:
+            raise WorkspaceError("Target must be a UTF-8 text file up to 1 MB.")
+        if not old_text:
+            raise WorkspaceError("old_text may not be empty.")
+        source = target.read_text(encoding="utf-8")
+        count = source.count(old_text)
+        if count != 1:
+            raise WorkspaceError(f"Expected exactly one match; found {count}.")
+        proposed = source.replace(old_text, new_text, 1)
+        if len(proposed.encode("utf-8")) > MAX_TEXT_BYTES:
+            raise WorkspaceError("Proposed content exceeds 1 MB.")
+        diff = "\n".join(difflib.unified_diff(
+            source.splitlines(), proposed.splitlines(),
+            fromfile=f"a/{target.name}", tofile=f"b/{target.name}",
+            lineterm=""
+        ))
+        return {"path": str(target), "diff": diff[:MAX_RESULT_CHARS],
+                "truncated": len(diff) > MAX_RESULT_CHARS, "applied": False}
+
+    def trash_list(self, workspace_index: int = 0) -> list[dict]:
+        """List recoverable deletion IDs; do not read private trash contents."""
+        if workspace_index < 0 or workspace_index >= len(self.roots):
+            raise WorkspaceError("Invalid workspace index.")
+        trash = self.roots[workspace_index] / ".winbridge_trash"
+        if not trash.is_dir():
+            return []
+        result = []
+        for meta in sorted(trash.glob("*.json"), reverse=True)[:100]:
+            if len(meta.stem) != 32 or not all(ch in "0123456789abcdef" for ch in meta.stem):
+                continue
+            if not (trash / f"{meta.stem}.file").is_file():
+                continue
+            try:
+                original = str(json.loads(meta.read_text(encoding="utf-8"))["original"])
+                self.resolve(original)
+                result.append({"restore_id": meta.stem, "original": original})
+            except (ValueError, KeyError, OSError, WorkspaceError):
+                continue
+        return result
+
+    def python_syntax_check(self, path: str = ".") -> dict:
+        """Parse Python files statically: no imports, scripts or shell execution."""
+        import ast
+        target = self.resolve(path, allow_root=True)
+        if not target.exists():
+            raise WorkspaceError("Path not found.")
+        checked = 0
+        errors = []
+        if target.is_file():
+            candidates = [target]
+        else:
+            candidates = []
+            for folder, subfolders, filenames in os.walk(target, followlinks=False):
+                subfolders[:] = [
+                    name for name in subfolders if name not in SKIP_DIRS
+                    and not self._is_sensitive(name)
+                    and not (Path(folder) / name).is_symlink()
+                ]
+                for name in filenames:
+                    if name.endswith(".py") and not self._is_sensitive(name):
+                        candidates.append(Path(folder) / name)
+                        if len(candidates) >= 100:
+                            break
+                if len(candidates) >= 100:
+                    break
+        for candidate in candidates:
+            try:
+                resolved = self.resolve(str(candidate))
+                if resolved.suffix != ".py":
+                    continue
+                if resolved.stat().st_size > MAX_TEXT_BYTES:
+                    errors.append({"path": str(resolved), "error": "File too large."})
+                    continue
+                ast.parse(resolved.read_text(encoding="utf-8"), filename=str(resolved))
+                checked += 1
+            except (SyntaxError, UnicodeError, OSError, WorkspaceError) as exc:
+                errors.append({"path": str(candidate), "error": str(exc)[:500]})
+        return {"checked": checked, "errors": errors[:100],
+                "ok": not errors, "truncated": len(candidates) >= 100}
