@@ -19,7 +19,7 @@ const write={readOnlyHint:false,destructiveHint:false,openWorldHint:false};
 const destructive={readOnlyHint:false,destructiveHint:true,openWorldHint:false};
 
 function createServer(){
-  const server=new McpServer({name:"winbridge-node",version:"0.2.0"});
+  const server=new McpServer({name:"winbridge-node",version:"0.3.0"});
   function register(name,description,inputSchema,annotations,handler){
     server.registerTool(name,{description,inputSchema,annotations},async(args)=>{
       try{return textResult(await handler(args));}
@@ -40,6 +40,8 @@ function createServer(){
   register("restore_file","Restore a file using its restore ID.",z.object({restore_id:z.string().regex(/^[a-f0-9]{32}$/),workspace_index:index.default(0)}),write,({restore_id,workspace_index})=>workspace.restore(restore_id,workspace_index));
   register("terminal_catalog","List approved PowerShell, CMD and developer diagnostic tasks.",noArgs,readOnly,()=>terminal.catalog());
   register("terminal_start","Request on-device permission and start a terminal task without timeout.",z.object({name:z.string().min(1).max(64),cwd:p.default(".")}),write,({name,cwd})=>terminal.start(name,cwd));
+  register("terminal_start_custom","Start a Windows-user-configured script/task profile after local approval; no automatic timeout.",
+    z.object({name:z.string().regex(/^[a-z][a-z0-9_-]{0,63}$/i)}),write,({name})=>terminal.startCustom(name));
   register("terminal_status","Check an asynchronous terminal job's output and exit status.",z.object({task_id:z.string().uuid()}),readOnly,({task_id})=>terminal.status(task_id));
   register("terminal_stop","Request manual termination of a running terminal job.",z.object({task_id:z.string().uuid()}),destructive,({task_id})=>terminal.stop(task_id));
   register("desktop_list_windows","List visible application window titles on Windows.",noArgs,readOnly,()=>listWindows());
