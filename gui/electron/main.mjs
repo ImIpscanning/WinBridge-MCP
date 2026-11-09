@@ -33,6 +33,15 @@ function wireIpc(){
   register("list-directory",({path:p="."})=>service.listDirectory(p));
   register("read-file",({path:p})=>service.readFile(p));
   register("list-trash",()=>service.listTrash());
+  register("backup-file",({path:p})=>ensureUserAction(()=>service.backupFile(p)));
+  register("list-backups",()=>service.listBackups());
+  register("restore-backup",({id,overwrite})=>ensureUserAction(async()=>{
+    const answer=await dialog.showMessageBox(window,{type:"warning",
+      buttons:["Cancelar","Restaurar respaldo"],cancelId:0,defaultId:0,
+      message:"¿Restaurar este respaldo?",
+      detail:overwrite?"Se hará una copia de la versión actual antes de reemplazarla.":"La restauración no sobrescribirá archivos existentes."});
+    return answer.response===1?service.restoreBackup(id,overwrite):{restored:false};
+  }));
   register("restore",({id})=>ensureUserAction(()=>service.restore(id)));
   register("activity",()=>service.activity());
   register("desktop-windows",()=>ensureUserAction(()=>sharedModules.windows.listWindows()));
