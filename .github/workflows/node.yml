@@ -30,5 +30,21 @@ jobs:
         run: npm install --no-audit --no-fund
       - name: Syntax check
         run: npm run check
+      - name: Parse PowerShell helper and compile Win32 declarations
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $script = Get-Content 'src/windows-input.ps1' -Raw
+          $tokens = $null
+          $parseErrors = $null
+          [void][System.Management.Automation.Language.Parser]::ParseInput($script, [ref]$tokens, [ref]$parseErrors)
+          if ($parseErrors.Count -gt 0) {
+            $parseErrors | ForEach-Object { Write-Error $_.Message }
+            throw 'Windows input PowerShell parser errors.'
+          }
+          $match = [regex]::Match($script, "(?ms)Add-Type -TypeDefinition @'\r?\n(.*?)\r?\n'@")
+          if (-not $match.Success) { throw 'Win32 declarations not found.' }
+          Add-Type -TypeDefinition $match.Groups[1].Value
+          Write-Host 'PowerShell syntax and Win32 C# declarations valid.'
       - name: Unit tests
         run: npm test
