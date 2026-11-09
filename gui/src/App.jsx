@@ -519,6 +519,13 @@ export default function App(){
       <div className="detail-row"><span>Configuración de Claude</span><code>{snapshot?.config_file||"—"}</code></div>
       <div className="detail-row"><span>Archivo de tareas</span><code>{snapshot?.task_file||"—"}</code></div>
       <div className="stack-actions"><Button icon={FolderOpen} onClick={()=>act(()=>api("openFolder"),"Directorio abierto")}>Abrir carpeta de datos</Button>
+       <Button icon={RefreshCw} onClick={async()=>{
+        try{
+          const update=await api("checkUpdates");
+          show(update.published?"Última versión GUI: "+update.tag+" (instalación manual)":
+            update.message,"success");
+        }catch(error){show(error.message,"error");}
+       }}>Comprobar actualizaciones</Button>
        <Button icon={ExternalLink} onClick={()=>api("openReleases").catch(e=>show(e.message,"error"))}>Consultar versiones en GitHub</Button></div>
       <div className="notice"><CircleHelp size={17}/><span>Las actualizaciones todavía se verifican manualmente. Un instalador firmado y actualizaciones automáticas requieren preparar publicaciones oficiales.</span></div>
      </Panel>
