@@ -119,6 +119,22 @@ function createWindow(){
       "http://127.0.0.1:5173/";
     if(app.isPackaged?url!==allowed:!url.startsWith(allowed))event.preventDefault();
   });
+  window.on("close",event=>{
+    const running=[...service.terminal.jobs.values()].filter(task=>task.status==="running");
+    if(!running.length)return;
+    const choice=dialog.showMessageBoxSync(window,{
+      type:"warning",defaultId:0,cancelId:0,
+      buttons:["Cancelar cierre","Solicitar detener y salir","Salir sin detener"],
+      message:"Hay "+running.length+" tarea(s) activas.",
+      detail:"Si sales sin detener, los procesos podrían continuar sin poder consultarlos desde esta sesión."
+    });
+    if(choice===0){event.preventDefault();return;}
+    if(choice===1){
+      for(const task of running){
+        try{service.stopTask(task.id);}catch{}
+      }
+    }
+  });
   window.once("ready-to-show",()=>window.show());
   if(!app.isPackaged && process.env.WINBRIDGE_GUI_DEV==="1"){
     window.loadURL("http://127.0.0.1:5173/");
