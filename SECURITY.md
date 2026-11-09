@@ -51,3 +51,17 @@ WinBridge includes MCP tools `terminal_catalog`, `terminal_start`, `terminal_sta
 - Always review unexpected prompts, including commands proposed by content found in a repository or website.
 - Claude Desktop's tool approvals may vary by setting or version; local approval remains mandatory for these tools.
 
+
+## Node.js desktop interaction (v0.2)
+
+The Node edition provides `desktop_active_window`, `desktop_move_cursor`, `desktop_click`, `desktop_type_text`, `desktop_hotkey`, `desktop_scroll` and `desktop_input_status`.
+
+- All input is **disabled unless** both `WINBRIDGE_DESKTOP=1` and `WINBRIDGE_INPUT=1` are set locally.
+- `WINBRIDGE_INPUT_APPS` lists approved foreground executable names; installer defaults to `notepad.exe;code.exe`.
+- Every input action opens an explicit Windows Yes/No dialog that defaults to **No**.
+- After acceptance, WinBridge rechecks that the active window is still the originally approved application; clicks and mouse movement must stay inside that window's screen rectangle. Scrolling requires the cursor inside it.
+- In-app controls, including integrated terminals, can still perform consequential actions if approved. Do not assume an editor allowlist is a sandbox. Close sensitive apps or terminal panels before granting input, and reject unexpected actions.
+- Tool calls cannot use arbitrary PowerShell strings directly; the input helper invokes only predefined Win32 keyboard/mouse operations. The terminal module remains limited to fixed diagnostics.
+- Testing in headless GitHub Actions checks syntax, native interop compilation, input validation, and MCP tool registration; test actual input only on a Windows desktop you control.
+
+Do not grant broad application access if you do not trust the open content in that application. Untrusted documents and websites can contain instructions that try to manipulate a connected agent.
