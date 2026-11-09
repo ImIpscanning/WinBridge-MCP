@@ -133,6 +133,7 @@ export default function App(){
  const [banner,setBanner]=useState(null);
  const [busy,setBusy]=useState(false);
  const [search,setSearch]=useState("");
+ const [taskPreview,setTaskPreview]=useState(null);
  const [sidebar,setSidebar]=useState(true);
  const [now,setNow]=useState(new Date());
 
@@ -338,7 +339,7 @@ export default function App(){
            <div className="grow"><strong>{task.name}</strong><small>{task.description}</small>
             <code>{task.program} {(task.args||[]).join(" ")}</code></div>
            <div className="task-actions">
-            <IconButton icon={Eye} title="Ver argumentos" onClick={()=>act(()=>api("previewTask",task.name),"Argumentos revisados en la configuración")}/>
+            <IconButton icon={Eye} title="Ver argumentos" onClick={async()=>{try{setTaskPreview(await api("previewTask",task.name));}catch(e){show(e.message,"error");}}}/>
             <IconButton icon={Trash2} title="Eliminar tarea" onClick={()=>{
               if(window.confirm("¿Eliminar la tarea "+task.name+" del catálogo?"))
                 act(()=>api("removeTask",task.name),"Tarea eliminada");
@@ -372,8 +373,9 @@ export default function App(){
           <IconButton icon={ArrowLeft} title="Volver" onClick={()=>{
            const target=listing?.directory;
            if(!target)return;
-           const parts=target.split(/[\\/]/);parts.pop();
-           setFolder(parts.join("/")||".");
+           const cleaned=target.replace(/[\\/]+$/,"");
+           const pos=Math.max(cleaned.lastIndexOf("/"),cleaned.lastIndexOf("\\"));
+           setFolder(pos>2?cleaned.slice(0,pos):".");
           }}/>
           <IconButton icon={RefreshCw} title="Actualizar" onClick={()=>readDirectory(folder)}/></div>}>
         {listing?.entries?.length?listing.entries.map(item=><button className="file-row" key={item.path}
@@ -503,6 +505,22 @@ export default function App(){
      </Panel>
     </>}
    </div>
+   {taskPreview&&<div className="modal-overlay" role="presentation" onClick={()=>setTaskPreview(null)}>
+    <section className="modal" role="dialog" aria-modal="true" aria-label="Vista previa de tarea"
+     onClick={e=>e.stopPropagation()}>
+     <div className="panel-header"><div><h3>{taskPreview.task}</h3><p>Comprueba los argumentos antes de autorizar la ejecución.</p></div>
+       <IconButton icon={X} title="Cerrar" onClick={()=>setTaskPreview(null)}/></div>
+     <div className="panel-body">
+      <div className="code-preview">
+       <div><span>EJECUTABLE</span><code>{taskPreview.executable}</code></div>
+       <div><span>ARGUMENTOS</span><code>{(taskPreview.arguments||[]).join("\n")||"(ninguno)"}</code></div>
+       <div><span>CARPETA DE TRABAJO</span><code>{taskPreview.working_directory}</code></div>
+      </div><div className="notice caution" style={{marginTop:15}}><ShieldAlert size={17}/>
+       <span>No se ha ejecutado nada. Cada inicio solicita confirmación en Windows.</span></div>
+      <div className="form-actions"><Button onClick={()=>setTaskPreview(null)}>Cerrar</Button>
+       <Button icon={Play} variant="primary" disabled={paused} onClick={async()=>{const name=taskPreview.task;setTaskPreview(null);await runTask(name);}}>Solicitar ejecución</Button></div>
+     </div>
+    </section></div>}
   </main>
  </div>;
 }
