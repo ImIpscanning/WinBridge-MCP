@@ -122,6 +122,7 @@ export default function App(){
  const [listing,setListing]=useState(null);
  const [selectedFile,setSelectedFile]=useState(null);
  const [trash,setTrash]=useState([]);
+ const [backups,setBackups]=useState([]);
  const [windows,setWindows]=useState([]);
  const [screenshot,setScreenshot]=useState(null);
  const [jobs,setJobs]=useState([]);
@@ -205,6 +206,10 @@ export default function App(){
  }
  async function getTrash(){
   try{setTrash(await api("listTrash"));}
+  catch(error){show(error.message,"error");}
+ }
+ async function getBackups(){
+  try{setBackups(await api("listBackups"));}
   catch(error){show(error.message,"error");}
  }
  async function getWindows(){
@@ -367,7 +372,7 @@ export default function App(){
 
     {page==="files"&&<>
       <SectionHeading title="File Manager" subtitle="Explora y revisa únicamente tus carpetas autorizadas."
-       actions={<Button icon={Trash2} onClick={getTrash}>Papelera</Button>}/>
+       actions={<><Button icon={Save} onClick={getBackups}>Respaldos</Button><Button icon={Trash2} onClick={getTrash}>Papelera</Button></>}/>
       <div className="files-layout"><Panel title="Explorador" subtitle={listing?.directory||folder}
        action={<div className="heading-actions">
           <IconButton icon={ArrowLeft} title="Volver" onClick={()=>{
@@ -383,10 +388,24 @@ export default function App(){
           {item.type==="directory"?<Folder size={18}/>:<FileText size={18}/>}
           <span>{item.name}</span><ChevronRight size={15}/></button>):
          <Empty icon={FolderOpen} title="Carpeta vacía" detail="Aquí aparecerán tus proyectos y archivos."/>}
-       </Panel><Panel title="Vista previa" subtitle={selectedFile?.path||"Selecciona un archivo de texto"}>
+       </Panel><Panel title="Vista previa" subtitle={selectedFile?.path||"Selecciona un archivo de texto"}
+       action={selectedFile&&<Button icon={Save} onClick={()=>act(async()=>{const result=await api("backupFile",selectedFile.path);await getBackups();return result;},"Copia de seguridad creada")}>Respaldar</Button>}>
         {selectedFile?<pre className="file-content">{selectedFile.content}</pre>:
         <Empty icon={FileCode2} title="Selecciona un archivo" detail="Se mostrarán hasta 300 líneas de texto."/>}
        </Panel></div>
+      {backups.length>0&&<Panel title="Copias de seguridad" subtitle="Respaldo de archivos en el directorio privado de WinBridge.">
+       {backups.map(item=><div className="activity-row" key={item.id}>
+        <div className="tiny-icon"><Save size={16}/></div>
+        <div className="grow"><strong>{item.original}</strong>
+         <small>{dateString(item.created_at)} · {Math.round((item.size_bytes||0)/1024)} KB</small></div>
+        <Button icon={RotateCcw} onClick={()=>act(()=>api("restoreBackup",item.id,false),"Copia restaurada")}>Restaurar</Button>
+        <Button variant="danger" onClick={()=>{
+          if(window.confirm("¿Reemplazar el archivo actual por esta copia? Se guardará primero un respaldo de la versión actual.")){
+            act(()=>api("restoreBackup",item.id,true),"Archivo restaurado y versión anterior respaldada");
+          }
+        }}>Reemplazar</Button>
+       </div>)}
+      </Panel>}
       {trash.length>0&&<Panel title="Papelera recuperable" subtitle="Los archivos eliminados se pueden restaurar.">
        {trash.map(item=><div className="activity-row" key={item.restore_id}>
         <div className="tiny-icon"><Trash2 size={16}/></div><div className="grow"><strong>{item.original}</strong></div>
