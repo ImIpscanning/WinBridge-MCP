@@ -7,6 +7,7 @@ window bounds are rechecked before dispatch.
 from __future__ import annotations
 
 import ctypes
+from ctypes import wintypes
 import os
 import sys
 from pathlib import Path
@@ -36,7 +37,25 @@ def _require_windows_input() -> None:
 
 
 def _user32() -> Any:
-    return ctypes.windll.user32
+    """Declare pointer-width-safe Win32 signatures for 32/64-bit Python."""
+    user32 = ctypes.windll.user32
+    user32.GetForegroundWindow.argtypes = []
+    user32.GetForegroundWindow.restype = wintypes.HWND
+    user32.GetWindowThreadProcessId.argtypes = [
+        wintypes.HWND, ctypes.POINTER(wintypes.DWORD)
+    ]
+    user32.GetWindowThreadProcessId.restype = wintypes.DWORD
+    user32.GetWindowTextW.argtypes = [wintypes.HWND, wintypes.LPWSTR, ctypes.c_int]
+    user32.GetWindowTextW.restype = ctypes.c_int
+    user32.IsWindow.argtypes = [wintypes.HWND]
+    user32.IsWindow.restype = wintypes.BOOL
+    user32.GetWindowRect.argtypes = [wintypes.HWND, ctypes.POINTER(wintypes.RECT)]
+    user32.GetWindowRect.restype = wintypes.BOOL
+    user32.MessageBoxW.argtypes = [
+        wintypes.HWND, wintypes.LPCWSTR, wintypes.LPCWSTR, wintypes.UINT
+    ]
+    user32.MessageBoxW.restype = ctypes.c_int
+    return user32
 
 
 def _active_window() -> tuple[int, str, str]:
@@ -132,10 +151,7 @@ def click(x: int, y: int, button: str = "left") -> dict:
     width, height = gui.size()
     if not 0 <= x < width or not 0 <= y < height:
         raise WorkspaceError("Click coordinates are outside the primary display.")
-    rect = ctypes.wintypes.RECT() if hasattr(ctypes, "wintypes") else None
-    if rect is None:
-        from ctypes import wintypes
-        rect = wintypes.RECT()
+    rect = wintypes.RECT()
     if not _user32().GetWindowRect(hwnd, ctypes.byref(rect)):
         raise WorkspaceError("Cannot locate the active window.")
     if not (rect.left <= x < rect.right and rect.top <= y < rect.bottom):
