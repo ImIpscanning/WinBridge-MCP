@@ -24,7 +24,7 @@ Requires **Python 3.11+** and **Claude Desktop**. Clone the project, then run in
 ```powershell
 git clone https://github.com/ImIpscanning/prueba.git
 cd prueba
-powershell -ExecutionPolicy Bypass -File .\install.ps1
+.\install.ps1
 ```
 
 The installer creates a virtual environment, installs `mcp` and `mss`, makes `%USERPROFILE%\Documents\WinBridgeWorkspace`, and **merges** the `winbridge` entry into `%APPDATA%\Claude\claude_desktop_config.json`. It backs up an existing config to `.winbridge-backup` before editing it. Restart Claude Desktop afterwards.
