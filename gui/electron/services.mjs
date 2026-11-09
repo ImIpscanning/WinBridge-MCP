@@ -228,6 +228,60 @@ export class ControlService {
   }
   taskStatus(id){return this.terminal.status(id);}
   stopTask(id){return this.terminal.stop(id);}
+  backupFile(input) {
+    const target=this.workspace.resolve(input);
+    const stat=fs.lstatSync(target);
+    if(!stat.isFile() || stat.isSymbolicLink() || stat.size>20_000_000)
+      throw new Error("Only regular workspace files up to 20 MB can be backed up.");
+    const dir=path.join(this.dataDir,"backups");
+    fs.mkdirSync(dir,{recursive:true});
+    const id=randomUUID(),created_at=new Date().toISOString();
+    fs.copyFileSync(target,path.join(dir,id+".file"),fs.constants.COPYFILE_EXCL);
+    atomicJson(path.join(dir,id+".json"),{
+      id,created_at,original:target,size_bytes:stat.size
+    });
+    return {id,created_at,original:target};
+  }
+  listBackups() {
+    const dir=path.join(this.dataDir,"backups");
+    if(!fs.existsSync(dir))return [];
+    return fs.readdirSync(dir).filter(n=>/^[0-9a-f-]{36}\.json$/i.test(n))
+      .slice(-150).flatMap(name=>{
+        const file=path.join(dir,name);
+        try {
+          if(fs.lstatSync(file).isSymbolicLink() || fs.statSync(file).size>10000)return [];
+          const data=JSON.parse(fs.readFileSync(file,"utf8"));
+          if(data.id!==name.slice(0,-5) || !fs.existsSync(path.join(dir,data.id+".file")))return [];
+          this.workspace.resolve(data.original);
+          return [data];
+        }catch{return [];}
+      }).sort((a,b)=>b.created_at.localeCompare(a.created_at));
+  }
+  restoreBackup(id,overwrite=false) {
+    if(!/^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(id))
+      throw new Error("Invalid backup ID.");
+    this.workspace.writeRequired();
+    const dir=path.join(this.dataDir,"backups");
+    const meta=path.join(dir,id+".json"),file=path.join(dir,id+".file");
+    if(!fs.existsSync(file)||!fs.existsSync(meta))throw new Error("Backup not found.");
+    const data=JSON.parse(fs.readFileSync(meta,"utf8"));
+    if(data.id!==id)throw new Error("Corrupt backup metadata.");
+    const target=this.workspace.resolve(data.original);
+    if(fs.existsSync(target) && !overwrite)
+      throw new Error("File already exists. Confirm replacement to restore a previous version.");
+    if(fs.existsSync(target)) {
+      if(!fs.statSync(target).isFile())throw new Error("Only regular files can be replaced.");
+      this.backupFile(target); // protect current version before overwrite
+    }
+    fs.mkdirSync(path.dirname(target),{recursive:true});
+    const tmp=path.join(path.dirname(target),".winbridge-restore-"+randomUUID());
+    try {
+      fs.copyFileSync(file,tmp,fs.constants.COPYFILE_EXCL);
+      fs.renameSync(tmp,target);
+    }finally{try{fs.unlinkSync(tmp);}catch{}}
+    this.workspace.audit("gui_restore_backup",target);
+    return {restored:target,previous_version_backed_up:!!overwrite};
+  }
   exportBundle(){
     return {schema_version:1,exported_at:new Date().toISOString(),
       settings:this.settings(),
