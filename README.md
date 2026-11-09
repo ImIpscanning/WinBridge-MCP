@@ -8,6 +8,7 @@
 - Official `@modelcontextprotocol/server` SDK v2; registers **`winbridge-node`** in Claude Desktop
 - Provides scoped file operations, PowerShell/CMD diagnostic tasks with **no automatic time limit**, and approved Windows desktop observation
 - **Node.js v0.2:** mouse movement, clicks, Unicode typing, editor shortcuts and scrolling, with on-device approval for each action
+- **Node.js v0.3:** locally configured PowerShell/CMD scripts and custom development commands, with on-device approval, no automatic execution timeout, preview, output inspection and manual cancellation
 - The original Python edition remains supported and unchanged
 - The Node installer configures the same editor permissions as Python. See the [Node-specific permissions guide](node/README.md#mouse-and-keyboard-permission-setup).
 
