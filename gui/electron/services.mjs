@@ -207,9 +207,16 @@ export class ControlService {
     for(const root of this.workspace.roots){
       const file=path.join(root,".winbridge_audit.jsonl");
       if(!fs.existsSync(file))continue;
-      const size=fs.statSync(file).size;
-      if(size>4_000_000){ /* tail of large logs only */ }
-      const text=fs.readFileSync(file,"utf8");
+      const fd=fs.openSync(file,"r");
+      let text="";
+      try {
+        const size=fs.fstatSync(fd).size;
+        const length=Math.min(size,128_000);
+        const bytes=Buffer.alloc(length);
+        fs.readSync(fd,bytes,0,length,size-length);
+        text=bytes.toString("utf8");
+        if(size>length) text=text.slice(text.indexOf("\n")+1);
+      } finally {fs.closeSync(fd);}
       for(const line of text.trim().split(/\r?\n/).slice(-limit)){
         try{const entry=JSON.parse(line);entries.push({...entry,workspace:root});}catch{}
       }
