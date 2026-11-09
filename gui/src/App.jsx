@@ -139,6 +139,10 @@ export default function App(){
  const [now,setNow]=useState(new Date());
 
  useEffect(()=>{document.documentElement.dataset.theme=theme;localStorage.setItem("winbridge-theme",theme);},[theme]);
+ useEffect(()=>{
+  const unsubscribe=window.winbridge?.onFocusRequests?.(()=>setPage("requests"));
+  return()=>{if(typeof unsubscribe==="function")unsubscribe();};
+ },[]);
 
  const show=(message,type="success")=>setBanner({message,type,key:Date.now()});
  const loadAll=useCallback(async()=>{
