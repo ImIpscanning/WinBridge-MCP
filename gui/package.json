@@ -9,7 +9,7 @@
     "dev": "concurrently -k \"vite --host 127.0.0.1\" \"wait-on http://127.0.0.1:5173 && cross-env WINBRIDGE_GUI_DEV=1 electron .\"",
     "start": "electron .",
     "build": "vite build",
-    "check": "node --check electron/main.mjs && node --check electron/services.mjs && node --check electron/preload.cjs && node --check ../node/src/command-requests.mjs && node --check ../node/src/control-state.mjs",
+    "check": "node --check electron/main.mjs && node --check electron/services.mjs && node --check electron/preload.cjs && node --check ../node/src/command-requests.mjs && node --check ../node/src/control-state.mjs && node --check electron/updates.mjs",
     "test": "node --test",
     "dist:win": "npm run build && electron-builder --win nsis",
     "dist:dir": "npm run build && electron-builder --dir"
