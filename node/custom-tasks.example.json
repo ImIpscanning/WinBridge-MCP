@@ -1,0 +1,37 @@
+{
+  "version": 1,
+  "tasks": {
+    "my_powershell_script": {
+      "description": "Run a personal PowerShell script that I reviewed and keep outside Claude's workspace.",
+      "program": "powershell.exe",
+      "args": [
+        "-NoProfile",
+        "-NonInteractive",
+        "-File",
+        "C:\\Users\\YOUR_NAME\\AppData\\Roaming\\WinBridge-MCP\\scripts\\my-script.ps1"
+      ],
+      "cwd": "."
+    },
+    "my_cmd_script": {
+      "description": "Run a locally reviewed CMD script from a private directory.",
+      "program": "cmd.exe",
+      "args": [
+        "/d",
+        "/c",
+        "C:\\Users\\YOUR_NAME\\AppData\\Roaming\\WinBridge-MCP\\scripts\\my-script.cmd"
+      ],
+      "cwd": "."
+    },
+    "check_powershell": {
+      "description": "Display installed PowerShell version.",
+      "program": "powershell.exe",
+      "args": [
+        "-NoProfile",
+        "-NonInteractive",
+        "-Command",
+        "$PSVersionTable.PSVersion.ToString()"
+      ],
+      "cwd": "."
+    }
+  }
+}
