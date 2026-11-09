@@ -6,6 +6,8 @@ $entryFile = Join-Path $project 'src\server.mjs'
 $workspace = Join-Path $HOME 'Documents\WinBridgeWorkspace'
 $configDir = Join-Path $env:APPDATA 'Claude'
 $configPath = Join-Path $configDir 'claude_desktop_config.json'
+$customDir = Join-Path $env:APPDATA 'WinBridge-MCP'
+$customFile = Join-Path $customDir 'custom-tasks.json'
 $nodeCommand = Get-Command node.exe -ErrorAction SilentlyContinue
 $npmCommand = Get-Command npm.cmd -ErrorAction SilentlyContinue
 if ($null -eq $nodeCommand -or $null -eq $npmCommand) {
@@ -28,6 +30,14 @@ try {
 
 New-Item -ItemType Directory -Force -Path $workspace | Out-Null
 New-Item -ItemType Directory -Force -Path $configDir | Out-Null
+New-Item -ItemType Directory -Force -Path $customDir | Out-Null
+if (-not (Test-Path $customFile)) {
+    $initial = [pscustomobject]@{
+        version = 1
+        tasks = [pscustomobject]@{}
+    } | ConvertTo-Json -Depth 10
+    [System.IO.File]::WriteAllText($customFile, $initial, (New-Object System.Text.UTF8Encoding($false)))
+}
 if (Test-Path $configPath) {
     Copy-Item $configPath ($configPath + '.winbridge-node-backup') -Force
     $config = Get-Content $configPath -Raw -Encoding UTF8 | ConvertFrom-Json
@@ -46,6 +56,7 @@ $entry = [pscustomobject]@{
         WINBRIDGE_DESKTOP = '1'
         WINBRIDGE_INPUT = '1'
         WINBRIDGE_INPUT_APPS = 'notepad.exe;code.exe'
+        WINBRIDGE_CUSTOM_TASKS_FILE = $customFile
     }
 }
 $config.mcpServers | Add-Member -NotePropertyName 'winbridge-node' -NotePropertyValue $entry -Force
@@ -53,5 +64,6 @@ $json = $config | ConvertTo-Json -Depth 30
 [System.IO.File]::WriteAllText($configPath,$json,(New-Object System.Text.UTF8Encoding($false)))
 Write-Host 'WinBridge Node registered as winbridge-node in Claude Desktop.' -ForegroundColor Green
 Write-Host "Configuration: $configPath"
+Write-Host "User-managed command profiles: $customFile"
 Write-Host 'Close and reopen Claude Desktop to use the new Node MCP tools.' -ForegroundColor Yellow
 Write-Host 'The Python winbridge entry is preserved; disable it manually if you want only Node tools.'
