@@ -32,12 +32,12 @@ function required(value,name,max=300) {
 function toBool(value) {return value===true || value==="1";}
 export async function loadShared(root) {
   const file=name=>pathToFileURL(path.resolve(root,name)).href;
-  const [core,terminal,tasks,requests,emergency] = await Promise.all([
+  const [core,terminal,tasks,requests,emergency,windows] = await Promise.all([
     import(file("workspace.mjs")),import(file("terminal.mjs")),
     import(file("custom-tasks.mjs")),import(file("command-requests.mjs")),
-    import(file("control-state.mjs"))
+    import(file("control-state.mjs")),import(file("windows.mjs"))
   ]);
-  return {core,terminal,tasks,requests,emergency};
+  return {core,terminal,tasks,requests,emergency,windows};
 }
 
 export class ControlService {
