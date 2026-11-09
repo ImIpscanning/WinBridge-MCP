@@ -107,9 +107,10 @@ def _approve(message: str, hwnd: int) -> None:
     MB_YESNO = 0x4
     MB_ICONWARNING = 0x30
     MB_TOPMOST = 0x40000
+    MB_DEFBUTTON2 = 0x100  # Default to No; approval must be deliberate.
     choice = _user32().MessageBoxW(
         0, message[:1200] + "\n\nApprove this one action?", "WinBridge MCP",
-        MB_YESNO | MB_ICONWARNING | MB_TOPMOST,
+        MB_YESNO | MB_ICONWARNING | MB_TOPMOST | MB_DEFBUTTON2,
     )
     if choice != 6:
         raise WorkspaceError("Desktop action rejected on the local Windows computer.")
