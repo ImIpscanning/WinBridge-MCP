@@ -1,4 +1,4 @@
-# WinBridge MCP — Node.js edition v0.2 (preview)
+# WinBridge MCP — Node.js edition v0.3 (preview)
 
 A separate **Node.js / JavaScript** Model Context Protocol (MCP) server for Claude Desktop. It does **not** require Python, and it does **not** replace the Python edition in the repository.
 
@@ -14,7 +14,7 @@ cd WinBridge-MCP
 .\node\install-node.ps1
 ```
 
-The installer runs npm install, creates `Documents\WinBridgeWorkspace`, backs up the existing Claude Desktop configuration, then registers a server named **`winbridge-node`** in `%APPDATA%\Claude\claude_desktop_config.json`. Close and reopen Claude Desktop afterward.
+The installer runs npm install, creates `Documents\WinBridgeWorkspace` and a separate custom-task configuration, backs up the existing Claude Desktop configuration, then registers a server named **`winbridge-node`** in `%APPDATA%\Claude\claude_desktop_config.json`. Close and reopen Claude Desktop afterward.
 
 ### If you already cloned the project
 
@@ -34,13 +34,55 @@ The Node installer does not delete other MCP connections. If you installed the P
 |---|---|
 | Workspace | `workspace_info`, `list_directory`, `read_file`, `search_text` |
 | File management | `create_directory`, `write_file`, `preview_text_edit`, `replace_text`, `move_file`, `delete_file`, `trash_list`, `restore_file` |
-| PowerShell / CMD | `terminal_catalog`, `terminal_start`, `terminal_status`, `terminal_stop` |
+| PowerShell / CMD | `terminal_catalog`, `terminal_start`, `terminal_preview_custom`, `terminal_start_custom`, `terminal_status`, `terminal_stop` |
 | Desktop observation | `desktop_list_windows`, `desktop_screenshot`, `desktop_open_workspace`, `desktop_active_window` |
 | Desktop interaction | `desktop_input_status`, `desktop_move_cursor`, `desktop_click`, `desktop_type_text`, `desktop_hotkey`, `desktop_scroll` |
 
-New terminal tasks run **without a fixed execution timeout** and can be stopped manually. However, they use **predefined diagnostic commands**, not unrestricted PowerShell or CMD scripts. Starting a job requires a local Windows Yes/No confirmation.
+New terminal tasks run **without a fixed execution timeout** and can be stopped manually. Built-in tasks use fixed diagnostics; user-created PowerShell and CMD scripts are available through separately configured custom task profiles. Starting a job requires a local Windows Yes/No confirmation.
 
 For screenshot capture and opening Explorer, local approval is also required. The **Node implementation now supports mouse movement, clicks, short Unicode text entry, editor hotkeys and scrolling**. Each input action is separately approved on the Windows PC and targets only approved foreground applications. This is not unattended or remote desktop control.
+
+## Run your own PowerShell / CMD project scripts (v0.3)
+
+**New:** WinBridge Node can run scripts and commands that **you configure on your Windows PC**. They do not have an automatic execution timeout. Each launch requires a separate Windows confirmation with the executable, argument list and project directory. After approval, Claude can check the output or request a manual stop.
+
+The installer creates a user-owned task file, without replacing existing profiles:
+
+```text
+%APPDATA%\WinBridge-MCP\custom-tasks.json
+```
+
+This configuration must stay **outside folders that Claude is authorized to edit**. Open it yourself in Notepad or VS Code and define the tasks you want Claude to be able to launch. Example:
+
+```json
+{
+  "version": 1,
+  "tasks": {
+    "check_powershell": {
+      "description": "Show PowerShell version",
+      "program": "powershell.exe",
+      "args": [
+        "-NoProfile",
+        "-NonInteractive",
+        "-Command",
+        "$PSVersionTable.PSVersion.ToString()"
+      ],
+      "cwd": "."
+    }
+  }
+}
+```
+
+`cwd: "."` means the first configured WinBridge workspace. The `program` and `args` values are **fixed locally by you**, not supplied as arbitrary shell source by Claude. You can add your own reviewed `.ps1` and `.cmd` script paths, or project build/test commands, to this catalog. See [custom-tasks.example.json](custom-tasks.example.json) for additional examples.
+
+After saving the file, ask Claude to:
+
+1. Run `terminal_catalog` to list personal task names.
+2. Run `terminal_preview_custom` to show the executable, arguments and working directory.
+3. Request `terminal_start_custom` with the selected task name. **You approve or reject it on Windows.**
+4. Use `terminal_status` to check progress and `terminal_stop` to cancel if necessary.
+
+**Scope:** this is not a general-purpose command executor accepting any arbitrary command string from the model. Local user-managed profiles can execute complex scripts, including scripts with significant side effects, so keep the configuration and script files outside model-writable folders. Claude's approval UI alone is not a reliable security boundary; the Windows confirmation is additional.
 
 ### Mouse and keyboard permission setup
 
