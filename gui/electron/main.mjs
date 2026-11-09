@@ -4,6 +4,7 @@ import fs from "node:fs";
 import path from "node:path";
 import {fileURLToPath} from "node:url";
 import {ControlService,loadShared} from "./services.mjs";
+import {checkUpdates} from "./updates.mjs";
 
 const here=path.dirname(fileURLToPath(import.meta.url));
 let window=null,service=null,sharedModules=null;
@@ -55,6 +56,7 @@ function wireIpc(){
     return result.canceled?null:(result.filePaths[0]||null);
   }));
   register("open-folder",()=>ensureUserAction(()=>shell.openPath(service.dataDir)));
+  register("check-updates",()=>ensureUserAction(()=>checkUpdates()));
   register("open-releases",()=>ensureUserAction(()=>shell.openExternal(
     "https://github.com/ImIpscanning/WinBridge-MCP/releases"
   )));
