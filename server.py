@@ -12,9 +12,11 @@ from mcp.server.mcpserver import Image
 from mcp.types import ToolAnnotations
 
 from winbridge_core import Workspace, WorkspaceError
+from winbridge_terminal import TerminalManager
 
 mcp = MCPServer('WinBridge MCP')
 workspace = Workspace.from_environment()
+terminal = TerminalManager(workspace)
 
 READ = ToolAnnotations(read_only_hint=True, open_world_hint=False)
 WRITE = ToolAnnotations(read_only_hint=False, destructive_hint=False, open_world_hint=False)
@@ -208,6 +210,32 @@ def trash_list(workspace_index: int = 0) -> list[dict]:
 def python_syntax_check(path: str = '.') -> dict:
     """Statically parse .py files in a project, without executing Python code."""
     return workspace.python_syntax_check(path)
+
+
+
+
+@mcp.tool(annotations=READ)
+def terminal_catalog() -> dict:
+    """List locally executable PowerShell, CMD and developer diagnostic tasks."""
+    return terminal.catalog()
+
+
+@mcp.tool(annotations=WRITE)
+def terminal_start(name: str, cwd: str = '.') -> dict:
+    """Ask Windows for local approval, then start a terminal task without a timeout."""
+    return terminal.start(name, cwd)
+
+
+@mcp.tool(annotations=READ)
+def terminal_status(task_id: str) -> dict:
+    """Read progress, captured output and completion status of a terminal task."""
+    return terminal.status(task_id)
+
+
+@mcp.tool(annotations=DELETE)
+def terminal_stop(task_id: str) -> dict:
+    """Manually stop a running terminal task by its task_id."""
+    return terminal.stop(task_id)
 
 
 if __name__ == '__main__':
