@@ -248,3 +248,8 @@ nav{display:flex;flex-direction:column;padding:7px 12px;gap:5px}
  .task-row{flex-wrap:wrap}
  .task-actions{width:100%;justify-content:flex-end}
 }
+
+.modal-overlay{position:fixed;inset:0;z-index:50;display:grid;place-items:center;background:rgba(5,3,12,.72);backdrop-filter:blur(7px);padding:22px}
+.modal{background:var(--panel);color:var(--text);border:1px solid var(--border);border-radius:16px;box-shadow:0 35px 90px #0008;width:min(620px,100%);max-height:92vh;overflow:auto}
+.modal .code-preview code{white-space:pre-wrap}
+.modal .panel-header{align-items:flex-start}
