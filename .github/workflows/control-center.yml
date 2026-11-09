@@ -1,0 +1,49 @@
+name: WinBridge Control Center
+
+on:
+  push:
+    paths:
+      - "gui/**"
+      - "node/src/**"
+      - ".github/workflows/control-center.yml"
+  pull_request:
+    paths:
+      - "gui/**"
+      - "node/src/**"
+      - ".github/workflows/control-center.yml"
+  workflow_dispatch:
+
+jobs:
+  gui-checks:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        working-directory: gui
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+      - name: Syntax checks
+        run: npm run check
+      - name: Unit tests
+        run: npm test
+      - name: Build React interface
+        run: npm run build
+      - name: Build unsigned Windows installer
+        if: runner.os == 'Windows'
+        run: npm run dist:win
+      - name: Publish Windows installer as run artifact
+        if: runner.os == 'Windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: WinBridge-Control-Center-Windows-x64
+          path: gui/dist-installer/*.exe
+          if-no-files-found: error
+          retention-days: 7
