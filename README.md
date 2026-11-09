@@ -1,5 +1,17 @@
 # WinBridge MCP
 
+## WinBridge Control Center — Windows GUI
+
+**NEW:** A polished Electron + React Windows management app is available under **[gui/](gui/)**.
+
+- Visual dashboard, local command profiles, Claude proposal approval inbox, task status/output, workspace browser, backup/restore history, desktop observation, activity logs and permission toggles
+- Claude may submit a structured **command proposal** through `terminal_propose_command`. The GUI displays it for review; proposals are not executed or saved automatically
+- You choose whether to edit/save a task profile. Every execution still requires local Windows approval. The GUI does not provide a direct arbitrary command-execution API to Claude
+- Shared emergency pause blocks **new MCP actions** until resumed; it does not automatically stop tasks already running
+- GitHub Actions can package an **unsigned Windows x64 installer (.exe)**. See the [Control Center installation guide](gui/README.md) and [build results](https://github.com/ImIpscanning/WinBridge-MCP/actions/workflows/control-center.yml)
+- Python and Node implementations remain available independently; GUI manages the Node integration
+
+
 ## Node.js edition available
 
 **NEW:** WinBridge now offers a standalone Node.js MCP server alongside the existing Python edition.
