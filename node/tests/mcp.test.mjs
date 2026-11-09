@@ -62,6 +62,10 @@ test("Node MCP server initializes and lists workspace tools over stdio",async()=
     assert.ok(names.includes("terminal_catalog"));
     assert.ok(names.includes("desktop_screenshot"));
     assert.ok(names.includes("restore_file"));
+    for (const name of [
+      "desktop_input_status", "desktop_active_window", "desktop_move_cursor",
+      "desktop_click", "desktop_type_text", "desktop_hotkey", "desktop_scroll"
+    ]) assert.ok(names.includes(name), "Missing MCP tool: " + name);
   } finally {
     clearTimeout(timer);
     child.kill();
