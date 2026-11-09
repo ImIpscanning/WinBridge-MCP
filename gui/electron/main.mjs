@@ -1,5 +1,5 @@
 /** WinBridge Control Center: isolated Electron main process. */
-import { app, BrowserWindow, ipcMain, dialog, shell } from "electron";
+import { app, BrowserWindow, ipcMain, dialog, shell, Notification } from "electron";
 import fs from "node:fs";
 import path from "node:path";
 import {fileURLToPath} from "node:url";
@@ -143,6 +143,32 @@ function createWindow(){
   }
 }
 
+function startProposalNotifications(){
+  let known=new Set(service.listProposals().map(item=>item.id));
+  setInterval(()=>{
+    try {
+      const pending=service.listProposals();
+      const newlyAdded=pending.filter(item=>!known.has(item.id));
+      known=new Set(pending.map(item=>item.id));
+      if(!newlyAdded.length || !Notification.isSupported())return;
+      const item=newlyAdded[0];
+      const notice=new Notification({
+        title:"WinBridge · Revisión requerida",
+        body:newlyAdded.length===1?
+          "Claude propuso una tarea: "+item.name:
+          "Claude envió "+newlyAdded.length+" tareas para revisar"
+      });
+      notice.on("click",()=>{
+        if(window?.isMinimized())window.restore();
+        window?.show();
+        window?.focus();
+        window?.webContents.send("winbridge:focus-requests");
+      });
+      notice.show();
+    }catch{ /* Inbox is also available without notifications. */ }
+  },4000).unref?.();
+}
+
 app.whenReady().then(async()=>{
   const sharedPath=app.isPackaged?
     path.join(process.resourcesPath,"node","src"):
@@ -150,8 +176,10 @@ app.whenReady().then(async()=>{
   const shared=await loadShared(sharedPath);
   sharedModules=shared;
   service=new ControlService(shared);
+  if(process.platform==="win32")app.setAppUserModelId("com.winbridge.controlcenter");
   wireIpc();
   createWindow();
+  startProposalNotifications();
   app.on("activate",()=>{
     if(BrowserWindow.getAllWindows().length===0)createWindow();
   });
