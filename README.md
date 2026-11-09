@@ -1,5 +1,15 @@
 # WinBridge MCP
 
+## Node.js edition available
+
+**NEW:** WinBridge now offers a standalone Node.js MCP server alongside the existing Python edition.
+
+- **[Node.js installation guide](node/README.md)** — Node 20+ with a one-command Windows installer: `./node/install-node.ps1`
+- Official `@modelcontextprotocol/server` SDK v2; registers **`winbridge-node`** in Claude Desktop
+- Provides scoped file operations, PowerShell/CMD diagnostic tasks with **no automatic time limit**, and approved Windows desktop observation
+- The original Python edition remains supported and unchanged
+
+
 A local, open-source **Windows 10/11 bridge for Claude Desktop**, built with the [official Python MCP SDK v2](https://py.sdk.modelcontextprotocol.io/). It combines project file editing, bounded terminal diagnostics, desktop observation and locally approved interaction with selected Windows applications.
 
 > **Status: v0.3 preview.** Core logic and unit tests are included. Windows desktop behavior must be checked on a real signed-in Windows session. This is not a remote-access service or an unrestricted shell.
