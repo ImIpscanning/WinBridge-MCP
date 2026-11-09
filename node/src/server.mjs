@@ -6,6 +6,8 @@ import { Workspace } from "./workspace.mjs";
 import { TerminalManager } from "./terminal.mjs";
 import { listWindows, captureDesktop, openExplorer } from "./windows.mjs";
 import { desktopInput, desktopInputStatus } from "./windows-input.mjs";
+import { proposeCommand } from "./command-requests.mjs";
+import { isEmergencyStopped } from "./control-state.mjs";
 
 const workspace=Workspace.fromEnv();
 const terminal=new TerminalManager(workspace);
@@ -22,7 +24,13 @@ function createServer(){
   const server=new McpServer({name:"winbridge-node",version:"0.3.0"});
   function register(name,description,inputSchema,annotations,handler){
     server.registerTool(name,{description,inputSchema,annotations},async(args)=>{
-      try{return textResult(await handler(args));}
+      try{
+        if(isEmergencyStopped() && !["workspace_info","terminal_catalog","terminal_status","terminal_stop",
+          "desktop_input_status"].includes(name)) {
+          throw new Error("Control Center emergency pause is active; new actions blocked.");
+        }
+        return textResult(await handler(args));
+      }
       catch(e){return {isError:true,content:[{type:"text",text:String(e?.message??e).slice(0,1200)}]};}
     });
   }
@@ -42,6 +50,12 @@ function createServer(){
   register("terminal_start","Request on-device permission and start a terminal task without timeout.",z.object({name:z.string().min(1).max(64),cwd:p.default(".")}),write,({name,cwd})=>terminal.start(name,cwd));
   register("terminal_preview_custom","Preview a locally configured script's exact executable, arguments and working directory.",
     z.object({name:z.string().regex(/^[a-z][a-z0-9_-]{0,63}$/i)}),readOnly,({name})=>terminal.previewCustom(name));
+  register("terminal_propose_command","Propose a custom command for human review in WinBridge Control Center. Does not execute or authorize.",
+    z.object({
+      name:z.string().min(1).max(64),description:z.string().min(1).max(300),
+      program:z.string().min(1).max(300),args:z.array(z.string().max(700)).max(24).default([]),
+      cwd:p.default(".")
+    }),write,(args)=>proposeCommand(workspace,args));
   register("terminal_start_custom","Start a Windows-user-configured script/task profile after local approval; no automatic timeout.",
     z.object({name:z.string().regex(/^[a-z][a-z0-9_-]{0,63}$/i)}),write,({name})=>terminal.startCustom(name));
   register("terminal_status","Check an asynchronous terminal job's output and exit status.",z.object({task_id:z.string().uuid()}),readOnly,({task_id})=>terminal.status(task_id));
@@ -49,7 +63,10 @@ function createServer(){
   register("desktop_list_windows","List visible application window titles on Windows.",noArgs,readOnly,()=>listWindows());
   // Screenshot image is returned as image/png, not a text string.
   server.registerTool("desktop_screenshot",{description:"Request on-device approval and capture the primary screen.",inputSchema:noArgs,annotations:readOnly},async()=>{
-    try{return {content:[{type:"image",data:captureDesktop(),mimeType:"image/png"}]};}
+    try{
+      if(isEmergencyStopped())throw new Error("Control Center emergency pause is active.");
+      return {content:[{type:"image",data:captureDesktop(),mimeType:"image/png"}]};
+    }
     catch(e){return {isError:true,content:[{type:"text",text:String(e?.message??e)}]};}
   });
   register("desktop_open_workspace","With local approval, open an authorized directory in Windows Explorer.",z.object({path:p.default(".")}),write,({path})=>openExplorer(workspace,path));
